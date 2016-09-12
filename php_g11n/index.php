@@ -1,81 +1,67 @@
 <?php
-namespace mcdanci\execise\php_g11n;
+require_once 'gettext.class.php';
 
-$lcList = array(
-    LC_SPOKEN => array(
-        'en' => 'en_GB',
-        'en-US' => 'en_US',
-        'zh' => 'zh_TW',
-        'zh-yue' => 'zh_HK',
-    ),
-    LC_WRITTEN => array(
-        'en' => 'en_GB',
-        'en-US' => 'en_US',
-        'zh' => 'zh_TW',
-        'zh-cmn-Hans' => 'zh_CN',
-        'zh-yue' => 'zh_HK',
-    ),
-);
-
-/**
- * Cut locale string one of the failback logic.
- * @param $lcString
- * @return bool | string
- */
-function cutLcStr($lcString)
-{
-    $pos = strrpos($lcString, '-');
-    if ($pos === false) {
-        return false;
-    } else {
-        return substr($lcString, 0, $pos);
-    }
-}
-
-/**
- * @param string $lcString
- * @param int $type
- */
-function checkLcStr($lcString, $type = LC_WRITTEN)
-{
-    return array_key_exists($lcString, $GLOBALS['lcList'][LC_WRITTEN]);
-}
-
-// check and failback logic
-/////////////////////////////////////
-function getLcCorrect($lcString, $type = LC_WRITTEN)
-{
-    if (! $lcString) {
-        return reset($lcList[$type]);
-    } elseif (checkLcVal($lcString, $type)) {
-        return $lcString;
-    } else {
-        getLcCorrect(lcStrCut($lcString), $type);
-    }
-}
+use mcdanci\execise\php_g11n\gettext;
 
 // initialize settings
 define('PACKAGE_DOMAIN', 'app');
 
+$realLc = array();
+
 // set locale settings for client
-if ($_GET['lc_spoken'] && $_COOKIE['lc_spoken'] != $_GET['lc_spoken']) {
-    setcookie(['lc_spoken'], $_GET['lc_spoken']);
+if ($_GET['lc_spoken'] || $_COOKIE['lc_spoken']) {
+    if ($_COOKIE['lc_spoken']) { // 需要校驗
+        if (! gettext::checkLcStr($_COOKIE['lc_spoken'], LC_SPOKEN)) {
+            $realLc['spoken'] = gettext::getLcCorrect($_COOKIE['lc_spoken'], LC_SPOKEN);
+            setcookie('lc_spoken', $realLc['spoken']);
+        } else {
+            $realLc['spoken'] = $_COOKIE['lc_spoken'];
+        }
+    } else { // 或許需要變更設定
+        if ($_GET['lc_spoken'] != $_COOKIE['lc_spoken']) {
+            if (gettext::checkLcStr($_GET['lc_spoken'], LC_SPOKEN)) {
+                $realLc['spoken'] = $_GET['lc_spoken'];
+                setcookie('lc_spoken', $realLc['spoken']);
+            } else {
+                $realLc['spoken'] = gettext::getLcCorrect($_GET['lc_spoken'], LC_SPOKEN);
+                setcookie('lc_spoken', $realLc['spoken']);
+            }
+        }
+    }
+
+    // set spoken L10n environmental var
+    ///putenv('LC_ALL=' . gettext::mapL10n($realLc['spoken']));
 }
+if ($_GET['lc_written'] || $_COOKIE['lc_written']) {
+    if ($_COOKIE['lc_written']) { // 需要校驗
+        if (! gettext::checkLcStr($_COOKIE['lc_written'])) {
+            $realLc['written'] = gettext::getLcCorrect($_COOKIE['lc_written']);
+            setcookie('lc_written', $realLc['written']);
+        } else {
+            $realLc['written'] = $_COOKIE['lc_written'];
+        }
+    } else { // 或許需要變更設定
+        if ($_GET['lc_written'] != $_COOKIE['lc_written']) {
+            if (gettext::checkLcStr($_GET['lc_written'])) {
+                $realLc['written'] = $_GET['lc_written'];
+                setcookie('lc_written', $realLc['written']);
+            } else {
+                $realLc['written'] = gettext::getLcCorrect($_GET['lc_written']);
+                setcookie('lc_written', $realLc['written']);
+            }
+        }
+    }
 
-if ($_GET['lc_written'] && $_COOKIE['lc_written'] != $_GET['lc_written']) {
-    setcookie(['lc_written'], $_GET['lc_written']);
+    // set written L10n environmental var
+    putenv('LC_ALL=' . gettext::mapL10n($realLc['written']));
 }
-
-
-// set L10n to Chinese
-putenv('LC_ALL=' . $_GET['locale']);
 
 // specify location of translation tables
 bindtextdomain(PACKAGE_DOMAIN, 'locale');
 
 textdomain(PACKAGE_DOMAIN);
 
-// looking for in ./locale/zh_HK/LC_MESSAGES/app.mo
+// looking for translation in ./locale
 
 // print test messages
 echo gettext('It just a test.') . "\n<br />";
