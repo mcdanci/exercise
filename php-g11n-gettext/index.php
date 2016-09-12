@@ -1,36 +1,49 @@
 <?php
 namespace mcdanci\execise\g11n_gettext;
-// reference: https://blog.longwin.com.tw/2007/09/gettext_php_i18n_2007/
-// failback logic
-define('LC_WITTEN', 0);
-define('LC_SPOKEN', 1);
 
-$lcList[LC_WITTEN] = array(
-    'en' => 'en_GB',
-    'en-US' => 'en_US',
-    'zh' => 'zh_TW',
-    'zh-cmn-Hans' => 'zh_CN',
-    'zh-yue' => 'zh_HK',
+$lcList = array(
+    LC_SPOKEN => array(
+        'en' => 'en_GB',
+        'en-US' => 'en_US',
+        'zh' => 'zh_TW',
+        'zh-yue' => 'zh_HK',
+    ),
+    LC_WRITTEN => array(
+        'en' => 'en_GB',
+        'en-US' => 'en_US',
+        'zh' => 'zh_TW',
+        'zh-cmn-Hans' => 'zh_CN',
+        'zh-yue' => 'zh_HK',
+    ),
 );
 
-function lcStrCut($lcString)
+/**
+ * Cut locale string one of the failback logic.
+ * @param $lcString
+ * @return bool | string
+ */
+function cutLcStr($lcString)
 {
     $pos = strrpos($lcString, '-');
-
-    if ($pos !== false) {
-        return substr($lcString, 0, $pos);
-    } else {
+    if ($pos === false) {
         return false;
+    } else {
+        return substr($lcString, 0, $pos);
     }
 }
 
-// check locale value
-function checkLcVal($lcString, $type = LC_WITTEN)
+/**
+ * @param string $lcString
+ * @param int $type
+ */
+function checkLcStr($lcString, $type = LC_WRITTEN)
 {
-    in_array($lcString, $lcList[$type]);
+    return array_key_exists($lcString, $GLOBALS['lcList'][LC_WRITTEN]);
 }
 
-function getLcCorrect($lcString, $type = LC_WITTEN)
+// check and failback logic
+/////////////////////////////////////
+function getLcCorrect($lcString, $type = LC_WRITTEN)
 {
     if (! $lcString) {
         return reset($lcList[$type]);
