@@ -1,5 +1,5 @@
 <?php
-namespace mcdanci\execise\php_g11n_gettext;
+namespace mcdanci\execise\php_g11n;
 
 $lcList = array(
     LC_SPOKEN => array(
